@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pogoda — Polska / Україна</title>
+  <title>Pogoda PL — pogoda w Polsce</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,10 +14,13 @@
       --paper: #f3f6fa;
       --line: rgba(26, 36, 51, 0.12);
       --accent: #c45c26;
+      --accent-soft: #e8a06a;
       --sky-top: #7eb6d9;
       --sky-mid: #b7d4e8;
       --sky-low: #e8eef4;
       --glass: rgba(255, 255, 255, 0.55);
+      --shadow: 0 18px 40px rgba(26, 36, 51, 0.08);
+      --radius: 18px;
       --font-display: "Fraunces", Georgia, serif;
       --font-body: "Manrope", sans-serif;
     }
@@ -152,47 +155,10 @@
     }
 
     .lede {
-      max-width: 36rem;
+      max-width: 34rem;
       font-size: clamp(1.05rem, 2.2vw, 1.25rem);
       color: var(--ink-soft);
-      margin-bottom: 1.5rem;
-    }
-
-    .country-switch {
-      display: inline-grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      margin-bottom: 1.25rem;
-      border: 1px solid var(--line);
-      background: var(--glass);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      overflow: hidden;
-      width: min(100%, 320px);
-    }
-
-    .country-switch button {
-      border: 0;
-      background: transparent;
-      color: var(--ink-soft);
-      padding: 0.8rem 1rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .country-switch button + button {
-      border-left: 1px solid var(--line);
-    }
-
-    .country-switch button[aria-pressed="true"] {
-      background: var(--ink);
-      color: #fff;
-    }
-
-    .country-switch button:hover:not([aria-pressed="true"]) {
-      background: rgba(255, 255, 255, 0.45);
-      color: var(--ink);
+      margin-bottom: 2rem;
     }
 
     .controls {
@@ -207,7 +173,7 @@
       background: var(--glass);
       backdrop-filter: blur(10px);
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 999px;
       padding: 0.85rem 2.6rem 0.85rem 1.2rem;
       min-width: min(100%, 240px);
       color: var(--ink);
@@ -226,7 +192,7 @@
       border: 1px solid var(--ink);
       background: var(--ink);
       color: #fff;
-      border-radius: 12px;
+      border-radius: 999px;
       padding: 0.85rem 1.35rem;
       cursor: pointer;
       transition: transform 0.2s ease, background 0.2s ease;
@@ -414,264 +380,112 @@
     }
   </style>
 </head>
-<body data-condition="cloudy" data-country="pl">
+<body data-condition="cloudy">
   <div class="sky" aria-hidden="true"></div>
 
   <main>
     <section class="hero wrap">
-      <p class="brand" id="brand">Pogoda <span>PL</span></p>
-      <p class="lede" id="lede"></p>
-
-      <div class="country-switch" role="group" aria-label="Country">
-        <button type="button" id="country-pl" data-country="pl" aria-pressed="true">Polska</button>
-        <button type="button" id="country-ua" data-country="ua" aria-pressed="false">Україна</button>
-      </div>
+      <p class="brand">Pogoda <span>PL</span></p>
+      <p class="lede">Śledź aktualną pogodę i prognozę dla miast w Polsce — na żywo, bez konta i bez klucza API.</p>
 
       <div class="controls">
-        <label class="visually-hidden" for="city" id="city-label" style="position:absolute;left:-9999px">City</label>
-        <select id="city" class="city-select" aria-label="City"></select>
-        <button type="button" class="refresh" id="refresh"></button>
+        <label class="visually-hidden" for="city" style="position:absolute;left:-9999px">Wybierz miasto</label>
+        <select id="city" class="city-select" aria-label="Wybierz miasto"></select>
+        <button type="button" class="refresh" id="refresh">Odśwież</button>
       </div>
 
       <div class="now" id="now" aria-live="polite">
-        <p class="now-city">…</p>
+        <p class="now-city">Ładowanie…</p>
         <p class="now-temp">--<small>°C</small></p>
-        <p class="now-desc"></p>
+        <p class="now-desc">Pobieranie danych pogodowych</p>
         <div class="now-meta"></div>
       </div>
-      <p class="status" id="status" data-busy="true"></p>
+      <p class="status" id="status" data-busy="true">Łączenie z Open-Meteo…</p>
     </section>
 
     <section class="section wrap" aria-labelledby="hourly-title">
-      <h2 id="hourly-title"></h2>
-      <p class="section-intro" id="hourly-intro"></p>
+      <h2 id="hourly-title">Najbliższe godziny</h2>
+      <p class="section-intro">Temperatura i warunki na kolejne godziny w wybranym mieście.</p>
       <div class="hours" id="hours"></div>
     </section>
 
     <section class="section wrap" aria-labelledby="daily-title">
-      <h2 id="daily-title"></h2>
-      <p class="section-intro" id="daily-intro"></p>
+      <h2 id="daily-title">7 dni w Polsce</h2>
+      <p class="section-intro">Tygodniowy zarys: maksima, minima i dominujący charakter dnia.</p>
       <div class="days" id="days"></div>
     </section>
 
-    <footer class="foot wrap" id="foot"></footer>
+    <footer class="foot wrap">
+      Dane: <a href="https://open-meteo.com/" rel="noopener noreferrer" target="_blank">Open-Meteo</a> (CC BY 4.0). Strefa czasowa: Europe/Warsaw.
+    </footer>
   </main>
 
   <script>
-    const COUNTRIES = {
-      pl: {
-        code: "PL",
-        locale: "pl-PL",
-        lang: "pl",
-        timezone: "Europe/Warsaw",
-        defaultCity: "Warszawa",
-        brand: "Pogoda <span>PL</span>",
-        lede: "Śledź pogodę w Polsce i Ukrainie — aktualne warunki i prognoza bez konta i bez klucza API.",
-        cityLabel: "Wybierz miasto",
-        refresh: "Odśwież",
-        loading: "Ładowanie…",
-        fetching: "Pobieranie danych pogodowych",
-        connecting: "Łączenie z Open-Meteo…",
-        updating: "Aktualizacja pogody…",
-        fetchError: "Nie udało się pobrać prognozy.",
-        networkError: "Błąd sieci. Spróbuj ponownie.",
-        updatedAt: (time) => `Zaktualizowano o ${time}`,
-        feelsLike: (v) => `Odczuwalna ${v}°`,
-        humidity: (v) => `Wilgotność ${v}%`,
-        wind: (v, dir) => `Wiatr ${v} km/h ${dir}`,
-        precip: (v) => `opady ${v}%`,
-        precipMm: (v) => `opady ${v} mm`,
-        hourlyTitle: "Najbliższe godziny",
-        hourlyIntro: "Temperatura i warunki na kolejne godziny w wybranym mieście.",
-        dailyTitle: "7 dni",
-        dailyIntro: "Tygodniowy zarys: maksima, minima i dominujący charakter dnia.",
-        foot: (tz) =>
-          `Dane: <a href="https://open-meteo.com/" rel="noopener noreferrer" target="_blank">Open-Meteo</a> (CC BY 4.0). Strefa czasowa: ${tz}.`,
-        unknown: "Warunki nieznane",
-        cities: [
-          { name: "Warszawa", lat: 52.2297, lon: 21.0122 },
-          { name: "Kraków", lat: 50.0647, lon: 19.945 },
-          { name: "Gdańsk", lat: 54.352, lon: 18.6466 },
-          { name: "Wrocław", lat: 51.1079, lon: 17.0385 },
-          { name: "Poznań", lat: 52.4064, lon: 16.9252 },
-          { name: "Łódź", lat: 51.7592, lon: 19.456 },
-          { name: "Szczecin", lat: 53.4285, lon: 14.5528 },
-          { name: "Lublin", lat: 51.2465, lon: 22.5684 },
-          { name: "Katowice", lat: 50.2649, lon: 19.0238 },
-          { name: "Białystok", lat: 53.1325, lon: 23.1688 },
-          { name: "Rzeszów", lat: 50.0412, lon: 21.9991 },
-          { name: "Zakopane", lat: 49.299, lon: 19.948 }
-        ],
-        weather: {
-          0: "Bezchmurnie",
-          1: "Przeważnie pogodnie",
-          2: "Częściowe zachmurzenie",
-          3: "Pochmurno",
-          45: "Mgła",
-          48: "Szadź / mgła osadzająca",
-          51: "Lekka mżawka",
-          53: "Mżawka",
-          55: "Gęsta mżawka",
-          56: "Marznąca mżawka",
-          57: "Silna marznąca mżawka",
-          61: "Lekki deszcz",
-          63: "Deszcz",
-          65: "Ulewny deszcz",
-          66: "Marznący deszcz",
-          67: "Silny marznący deszcz",
-          71: "Lekki śnieg",
-          73: "Śnieg",
-          75: "Intensywny śnieg",
-          77: "Ziarna śniegu",
-          80: "Przelotne opady",
-          81: "Przelotny deszcz",
-          82: "Gwałtowne opady",
-          85: "Przelotny śnieg",
-          86: "Intensywny przelotny śnieg",
-          95: "Burza",
-          96: "Burza z gradem",
-          99: "Silna burza z gradem"
-        }
-      },
-      ua: {
-        code: "UA",
-        locale: "uk-UA",
-        lang: "uk",
-        timezone: "Europe/Kyiv",
-        defaultCity: "Київ",
-        brand: "Погода <span>UA</span>",
-        lede: "Слідкуйте за погодою в Україні та Польщі — актуальні умови й прогноз без акаунта і без ключа API.",
-        cityLabel: "Оберіть місто",
-        refresh: "Оновити",
-        loading: "Завантаження…",
-        fetching: "Отримання даних про погоду",
-        connecting: "З’єднання з Open-Meteo…",
-        updating: "Оновлення погоди…",
-        fetchError: "Не вдалося отримати прогноз.",
-        networkError: "Помилка мережі. Спробуйте ще раз.",
-        updatedAt: (time) => `Оновлено о ${time}`,
-        feelsLike: (v) => `Відчувається як ${v}°`,
-        humidity: (v) => `Вологість ${v}%`,
-        wind: (v, dir) => `Вітер ${v} км/год ${dir}`,
-        precip: (v) => `опади ${v}%`,
-        precipMm: (v) => `опади ${v} мм`,
-        hourlyTitle: "Найближчі години",
-        hourlyIntro: "Температура та умови на найближчі години в обраному місті.",
-        dailyTitle: "7 днів",
-        dailyIntro: "Тижневий огляд: максимуми, мінімуми та характер дня.",
-        foot: (tz) =>
-          `Дані: <a href="https://open-meteo.com/" rel="noopener noreferrer" target="_blank">Open-Meteo</a> (CC BY 4.0). Часовий пояс: ${tz}.`,
-        unknown: "Невідомі умови",
-        cities: [
-          { name: "Київ", lat: 50.4501, lon: 30.5234 },
-          { name: "Львів", lat: 49.8397, lon: 24.0297 },
-          { name: "Одеса", lat: 46.4825, lon: 30.7233 },
-          { name: "Харків", lat: 49.9935, lon: 36.2304 },
-          { name: "Дніпро", lat: 48.4647, lon: 35.0462 },
-          { name: "Запоріжжя", lat: 47.8388, lon: 35.1396 },
-          { name: "Вінниця", lat: 49.2328, lon: 28.481 },
-          { name: "Чернівці", lat: 48.2915, lon: 25.9403 },
-          { name: "Івано-Франківськ", lat: 48.9226, lon: 24.7111 },
-          { name: "Ужгород", lat: 48.6208, lon: 22.2879 },
-          { name: "Полтава", lat: 49.5883, lon: 34.5514 },
-          { name: "Миколаїв", lat: 46.975, lon: 31.9946 }
-        ],
-        weather: {
-          0: "Ясно",
-          1: "Переважно ясно",
-          2: "Мінлива хмарність",
-          3: "Хмарно",
-          45: "Туман",
-          48: "Інійовий туман",
-          51: "Легка мряка",
-          53: "Мряка",
-          55: "Густа мряка",
-          56: "Крижана мряка",
-          57: "Сильна крижана мряка",
-          61: "Невеликий дощ",
-          63: "Дощ",
-          65: "Сильний дощ",
-          66: "Крижаний дощ",
-          67: "Сильний крижаний дощ",
-          71: "Невеликий сніг",
-          73: "Сніг",
-          75: "Сильний сніг",
-          77: "Снігові зерна",
-          80: "Короткочасні опади",
-          81: "Злива",
-          82: "Сильна злива",
-          85: "Снігопад з проясненнями",
-          86: "Сильний снігопад",
-          95: "Гроза",
-          96: "Гроза з градом",
-          99: "Сильна гроза з градом"
-        }
-      }
+    const CITIES = [
+      { name: "Warszawa", lat: 52.2297, lon: 21.0122 },
+      { name: "Kraków", lat: 50.0647, lon: 19.9450 },
+      { name: "Gdańsk", lat: 54.3520, lon: 18.6466 },
+      { name: "Wrocław", lat: 51.1079, lon: 17.0385 },
+      { name: "Poznań", lat: 52.4064, lon: 16.9252 },
+      { name: "Łódź", lat: 51.7592, lon: 19.4560 },
+      { name: "Szczecin", lat: 53.4285, lon: 14.5528 },
+      { name: "Lublin", lat: 51.2465, lon: 22.5684 },
+      { name: "Katowice", lat: 50.2649, lon: 19.0238 },
+      { name: "Białystok", lat: 53.1325, lon: 23.1688 },
+      { name: "Rzeszów", lat: 50.0412, lon: 21.9991 },
+      { name: "Zakopane", lat: 49.2990, lon: 19.9480 }
+    ];
+
+    const WEATHER_CODES = {
+      0: { label: "Bezchmurnie", condition: "clear" },
+      1: { label: "Przeważnie pogodnie", condition: "clear" },
+      2: { label: "Częściowe zachmurzenie", condition: "cloudy" },
+      3: { label: "Pochmurno", condition: "cloudy" },
+      45: { label: "Mgła", condition: "fog" },
+      48: { label: "Szadź / mgła osadzająca", condition: "fog" },
+      51: { label: "Lekka mżawka", condition: "rain" },
+      53: { label: "Mżawka", condition: "rain" },
+      55: { label: "Gęsta mżawka", condition: "rain" },
+      56: { label: "Marznąca mżawka", condition: "rain" },
+      57: { label: "Silna marznąca mżawka", condition: "rain" },
+      61: { label: "Lekki deszcz", condition: "rain" },
+      63: { label: "Deszcz", condition: "rain" },
+      65: { label: "Ulewny deszcz", condition: "rain" },
+      66: { label: "Marznący deszcz", condition: "rain" },
+      67: { label: "Silny marznący deszcz", condition: "rain" },
+      71: { label: "Lekki śnieg", condition: "snow" },
+      73: { label: "Śnieg", condition: "snow" },
+      75: { label: "Intensywny śnieg", condition: "snow" },
+      77: { label: "Ziarna śniegu", condition: "snow" },
+      80: { label: "Przelotne opady", condition: "rain" },
+      81: { label: "Przelotny deszcz", condition: "rain" },
+      82: { label: "Gwałtowne opady", condition: "rain" },
+      85: { label: "Przelotny śnieg", condition: "snow" },
+      86: { label: "Intensywny przelotny śnieg", condition: "snow" },
+      95: { label: "Burza", condition: "storm" },
+      96: { label: "Burza z gradem", condition: "storm" },
+      99: { label: "Silna burza z gradem", condition: "storm" }
     };
 
-    const CONDITIONS = {
-      0: "clear",
-      1: "clear",
-      2: "cloudy",
-      3: "cloudy",
-      45: "fog",
-      48: "fog",
-      51: "rain",
-      53: "rain",
-      55: "rain",
-      56: "rain",
-      57: "rain",
-      61: "rain",
-      63: "rain",
-      65: "rain",
-      66: "rain",
-      67: "rain",
-      71: "snow",
-      73: "snow",
-      75: "snow",
-      77: "snow",
-      80: "rain",
-      81: "rain",
-      82: "rain",
-      85: "snow",
-      86: "snow",
-      95: "storm",
-      96: "storm",
-      99: "storm"
-    };
-
-    const brandEl = document.getElementById("brand");
-    const ledeEl = document.getElementById("lede");
     const citySelect = document.getElementById("city");
-    const cityLabel = document.getElementById("city-label");
     const refreshBtn = document.getElementById("refresh");
     const nowEl = document.getElementById("now");
     const statusEl = document.getElementById("status");
     const hoursEl = document.getElementById("hours");
     const daysEl = document.getElementById("days");
-    const hourlyTitle = document.getElementById("hourly-title");
-    const hourlyIntro = document.getElementById("hourly-intro");
-    const dailyTitle = document.getElementById("daily-title");
-    const dailyIntro = document.getElementById("daily-intro");
-    const footEl = document.getElementById("foot");
-    const countryButtons = [...document.querySelectorAll(".country-switch button")];
 
-    let countryKey = localStorage.getItem("pogoda-country") === "ua" ? "ua" : "pl";
-    const savedCities = {
-      pl: localStorage.getItem("pogoda-city-pl"),
-      ua: localStorage.getItem("pogoda-city-ua")
-    };
+    const savedCity = localStorage.getItem("pogoda-pl-city") || "Warszawa";
 
-    function country() {
-      return COUNTRIES[countryKey];
-    }
+    CITIES.forEach((city) => {
+      const option = document.createElement("option");
+      option.value = city.name;
+      option.textContent = city.name;
+      if (city.name === savedCity) option.selected = true;
+      citySelect.appendChild(option);
+    });
 
     function describe(code) {
-      const cfg = country();
-      return {
-        label: cfg.weather[code] || cfg.unknown,
-        condition: CONDITIONS[code] || "cloudy"
-      };
+      return WEATHER_CODES[code] || { label: "Warunki nieznane", condition: "cloudy" };
     }
 
     function windDir(degrees) {
@@ -680,22 +494,20 @@
     }
 
     function formatHour(iso) {
-      const cfg = country();
-      return new Intl.DateTimeFormat(cfg.locale, {
+      return new Intl.DateTimeFormat("pl-PL", {
         hour: "2-digit",
         minute: "2-digit",
-        timeZone: cfg.timezone
+        timeZone: "Europe/Warsaw"
       }).format(new Date(iso));
     }
 
     function formatDay(iso) {
-      const cfg = country();
-      return new Intl.DateTimeFormat(cfg.locale, {
+      return new Intl.DateTimeFormat("pl-PL", {
         weekday: "short",
         day: "numeric",
         month: "short",
-        timeZone: cfg.timezone
-      }).format(new Date(`${iso}T12:00:00`));
+        timeZone: "Europe/Warsaw"
+      }).format(new Date(iso + "T12:00:00"));
     }
 
     function setStatus(message, { busy = false, error = false } = {}) {
@@ -704,56 +516,16 @@
       statusEl.classList.toggle("error", error);
     }
 
-    function fillCities() {
-      const cfg = country();
-      const preferred = savedCities[countryKey] || cfg.defaultCity;
-      citySelect.innerHTML = "";
-      cfg.cities.forEach((city) => {
-        const option = document.createElement("option");
-        option.value = city.name;
-        option.textContent = city.name;
-        if (city.name === preferred) option.selected = true;
-        citySelect.appendChild(option);
-      });
-      if (!cfg.cities.some((city) => city.name === preferred)) {
-        citySelect.selectedIndex = 0;
-      }
-    }
-
-    function applyStaticCopy() {
-      const cfg = country();
-      document.documentElement.lang = cfg.lang;
-      document.title = `Pogoda — ${cfg.code === "PL" ? "Polska / Україна" : "Україна / Polska"}`;
-      document.body.dataset.country = countryKey;
-      brandEl.innerHTML = cfg.brand;
-      ledeEl.textContent = cfg.lede;
-      cityLabel.textContent = cfg.cityLabel;
-      citySelect.setAttribute("aria-label", cfg.cityLabel);
-      refreshBtn.textContent = cfg.refresh;
-      hourlyTitle.textContent = cfg.hourlyTitle;
-      hourlyIntro.textContent = cfg.hourlyIntro;
-      dailyTitle.textContent = cfg.dailyTitle;
-      dailyIntro.textContent = cfg.dailyIntro;
-      footEl.innerHTML = cfg.foot(cfg.timezone);
-      countryButtons.forEach((btn) => {
-        btn.setAttribute("aria-pressed", btn.dataset.country === countryKey ? "true" : "false");
-      });
-    }
-
     async function loadWeather(cityName) {
-      const cfg = country();
-      const city = cfg.cities.find((item) => item.name === cityName) || cfg.cities[0];
-      savedCities[countryKey] = city.name;
-      localStorage.setItem(`pogoda-city-${countryKey}`, city.name);
-      localStorage.setItem("pogoda-country", countryKey);
-
+      const city = CITIES.find((item) => item.name === cityName) || CITIES[0];
+      localStorage.setItem("pogoda-pl-city", city.name);
       refreshBtn.disabled = true;
-      setStatus(cfg.updating, { busy: true });
+      setStatus("Aktualizacja pogody…", { busy: true });
 
       const url = new URL("https://api.open-meteo.com/v1/forecast");
       url.searchParams.set("latitude", city.lat);
       url.searchParams.set("longitude", city.lon);
-      url.searchParams.set("timezone", cfg.timezone);
+      url.searchParams.set("timezone", "Europe/Warsaw");
       url.searchParams.set("forecast_days", "7");
       url.searchParams.set(
         "current",
@@ -767,24 +539,23 @@
 
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error(cfg.fetchError);
+        if (!response.ok) throw new Error("Nie udało się pobrać prognozy.");
         const data = await response.json();
         renderWeather(city, data);
-        const updated = new Intl.DateTimeFormat(cfg.locale, {
+        const updated = new Intl.DateTimeFormat("pl-PL", {
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: cfg.timezone
+          timeZone: "Europe/Warsaw"
         }).format(new Date());
-        setStatus(cfg.updatedAt(updated));
+        setStatus(`Zaktualizowano o ${updated}`);
       } catch (error) {
-        setStatus(error.message || cfg.networkError, { error: true });
+        setStatus(error.message || "Błąd sieci. Spróbuj ponownie.", { error: true });
       } finally {
         refreshBtn.disabled = false;
       }
     }
 
     function renderWeather(city, data) {
-      const cfg = country();
       const current = data.current;
       const info = describe(current.weather_code);
       document.body.dataset.condition = info.condition;
@@ -794,9 +565,9 @@
         <p class="now-temp">${Math.round(current.temperature_2m)}<small>°C</small></p>
         <p class="now-desc">${info.label}</p>
         <div class="now-meta">
-          <span>${cfg.feelsLike(Math.round(current.apparent_temperature))}</span>
-          <span>${cfg.humidity(current.relative_humidity_2m)}</span>
-          <span>${cfg.wind(Math.round(current.wind_speed_10m), windDir(current.wind_direction_10m))}</span>
+          <span>Odczuwalna ${Math.round(current.apparent_temperature)}°</span>
+          <span>Wilgotność ${current.relative_humidity_2m}%</span>
+          <span>Wiatr ${Math.round(current.wind_speed_10m)} km/h ${windDir(current.wind_direction_10m)}</span>
         </div>
       `;
 
@@ -818,7 +589,7 @@
               <time datetime="${data.hourly.time[i]}">${formatHour(data.hourly.time[i])}</time>
               <strong>${Math.round(data.hourly.temperature_2m[i])}°</strong>
               <span>${code.label}</span>
-              <span>${cfg.precip(rain ?? 0)}</span>
+              <span>opady ${rain ?? 0}%</span>
             </article>
           `;
         })
@@ -832,7 +603,7 @@
               <time datetime="${day}">${formatDay(day)}</time>
               <div>
                 <strong style="font-family:var(--font-body);font-size:1rem">${code.label}</strong>
-                <span>${cfg.precipMm(data.daily.precipitation_sum[i])}</span>
+                <span>opady ${data.daily.precipitation_sum[i]} mm</span>
               </div>
               <p class="range">${Math.round(data.daily.temperature_2m_max[i])}°<em>${Math.round(data.daily.temperature_2m_min[i])}°</em></p>
             </article>
@@ -841,25 +612,9 @@
         .join("");
     }
 
-    function setCountry(next) {
-      if (!COUNTRIES[next] || next === countryKey) return;
-      countryKey = next;
-      applyStaticCopy();
-      fillCities();
-      loadWeather(citySelect.value);
-    }
-
-    countryButtons.forEach((btn) => {
-      btn.addEventListener("click", () => setCountry(btn.dataset.country));
-    });
     citySelect.addEventListener("change", () => loadWeather(citySelect.value));
     refreshBtn.addEventListener("click", () => loadWeather(citySelect.value));
 
-    applyStaticCopy();
-    fillCities();
-    setStatus(country().connecting, { busy: true });
-    nowEl.querySelector(".now-city").textContent = country().loading;
-    nowEl.querySelector(".now-desc").textContent = country().fetching;
     loadWeather(citySelect.value);
   </script>
 </body>
