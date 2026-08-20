@@ -1,12 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hello World</title>
+  <title>Pogoda PL — pogoda w Polsce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a2433;
+      --ink-soft: #445064;
+      --paper: #f3f6fa;
+      --line: rgba(26, 36, 51, 0.12);
+      --accent: #c45c26;
+      --accent-soft: #e8a06a;
+      --sky-top: #7eb6d9;
+      --sky-mid: #b7d4e8;
+      --sky-low: #e8eef4;
+      --glass: rgba(255, 255, 255, 0.55);
+      --shadow: 0 18px 40px rgba(26, 36, 51, 0.08);
+      --radius: 18px;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "Manrope", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background: var(--paper);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    .sky {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(ellipse 90% 60% at 70% -10%, rgba(255, 220, 160, 0.45), transparent 55%),
+        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 42%, var(--sky-low) 72%, var(--paper) 100%);
+      transition: background 0.8s ease;
+    }
+
+    .sky::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.35) 0 2px, transparent 3px),
+        radial-gradient(circle at 72% 18%, rgba(255, 255, 255, 0.25) 0 1.5px, transparent 3px),
+        radial-gradient(circle at 44% 30%, rgba(255, 255, 255, 0.2) 0 1px, transparent 2px);
+      opacity: 0.55;
+      animation: drift 28s linear infinite;
+      pointer-events: none;
+    }
+
+    body[data-condition="rain"] .sky {
+      --sky-top: #5f758c;
+      --sky-mid: #8fa3b5;
+      --sky-low: #d5dde5;
+    }
+
+    body[data-condition="storm"] .sky {
+      --sky-top: #3d4a5c;
+      --sky-mid: #6b7a8d;
+      --sky-low: #c8d0da;
+    }
+
+    body[data-condition="snow"] .sky {
+      --sky-top: #9bb4c9;
+      --sky-mid: #d0dce8;
+      --sky-low: #eef3f7;
+    }
+
+    body[data-condition="fog"] .sky {
+      --sky-top: #9aa7b5;
+      --sky-mid: #c5ccd4;
+      --sky-low: #e6e9ed;
+    }
+
+    body[data-condition="clear"] .sky {
+      --sky-top: #5aa4d4;
+      --sky-mid: #a9d0ea;
+      --sky-low: #e7f1f8;
+    }
+
+    body[data-condition="cloudy"] .sky {
+      --sky-top: #7f93a8;
+      --sky-mid: #b3c2d0;
+      --sky-low: #e4ebf1;
+    }
+
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(-40px); }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 1; }
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      align-content: center;
+      padding: 2.5rem 0 3rem;
+      animation: rise 0.7s ease both;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 8vw, 5.4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+      margin-bottom: 1rem;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .lede {
+      max-width: 34rem;
+      font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+      color: var(--ink-soft);
+      margin-bottom: 2rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .city-select {
+      appearance: none;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.85rem 2.6rem 0.85rem 1.2rem;
+      min-width: min(100%, 240px);
+      color: var(--ink);
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+        linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
+
+    .refresh {
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.85rem 1.35rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .refresh:hover {
+      transform: translateY(-1px);
+      background: #2a3749;
+    }
+
+    .refresh:disabled {
+      opacity: 0.6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .now {
+      display: grid;
+      gap: 0.35rem;
+      max-width: 40rem;
+      animation: rise 0.8s ease 0.12s both;
+    }
+
+    .now-city {
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+
+    .now-temp {
+      font-family: var(--font-display);
+      font-size: clamp(4.5rem, 16vw, 8rem);
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+    }
+
+    .now-temp small {
+      font-size: 0.35em;
+      vertical-align: super;
+      margin-left: 0.1em;
+    }
+
+    .now-desc {
+      font-size: clamp(1.2rem, 3vw, 1.7rem);
+      font-weight: 600;
+    }
+
+    .now-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      margin-top: 0.75rem;
+      color: var(--ink-soft);
+      font-size: 0.98rem;
+    }
+
+    .status {
+      min-height: 1.4rem;
+      margin-top: 1rem;
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+    }
+
+    .status[data-busy="true"] {
+      animation: pulse-soft 1.4s ease infinite;
+    }
+
+    .status.error {
+      color: #9b2c2c;
+    }
+
+    .section {
+      padding: 0 0 4.5rem;
+      animation: rise 0.75s ease 0.2s both;
+    }
+
+    .section h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-intro {
+      color: var(--ink-soft);
+      margin-bottom: 1.5rem;
+      max-width: 36rem;
+    }
+
+    .hours {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(88px, 1fr);
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      scroll-snap-type: x mandatory;
+    }
+
+    .hour {
+      scroll-snap-align: start;
+      padding: 1rem 0.75rem;
+      border-top: 1px solid var(--line);
+      min-width: 88px;
+      transition: background 0.25s ease;
+    }
+
+    .hour:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .hour time,
+    .day time {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.55rem;
+      font-weight: 600;
+    }
+
+    .hour strong,
+    .day strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .hour span,
+    .day span {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+    }
+
+    .days {
+      display: grid;
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .day {
+      display: grid;
+      grid-template-columns: 7rem 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .day .range {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      white-space: nowrap;
+    }
+
+    .day .range em {
+      font-style: normal;
+      color: var(--ink-soft);
+      margin-left: 0.45rem;
+      font-size: 0.9em;
+    }
+
+    .foot {
+      padding: 0 0 2.5rem;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .foot a {
+      color: inherit;
+    }
+
+    @media (max-width: 640px) {
+      .day {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+      }
+
+      .day .range {
+        justify-self: start;
+      }
+    }
+  </style>
 </head>
-<body>
-  <h1>Hello World</h1>
-  <p>This is a simple HTML page.</p>
+<body data-condition="cloudy">
+  <div class="sky" aria-hidden="true"></div>
+
+  <main>
+    <section class="hero wrap">
+      <p class="brand">Pogoda <span>PL</span></p>
+      <p class="lede">Śledź aktualną pogodę i prognozę dla miast w Polsce — na żywo, bez konta i bez klucza API.</p>
+
+      <div class="controls">
+        <label class="visually-hidden" for="city" style="position:absolute;left:-9999px">Wybierz miasto</label>
+        <select id="city" class="city-select" aria-label="Wybierz miasto"></select>
+        <button type="button" class="refresh" id="refresh">Odśwież</button>
+      </div>
+
+      <div class="now" id="now" aria-live="polite">
+        <p class="now-city">Ładowanie…</p>
+        <p class="now-temp">--<small>°C</small></p>
+        <p class="now-desc">Pobieranie danych pogodowych</p>
+        <div class="now-meta"></div>
+      </div>
+      <p class="status" id="status" data-busy="true">Łączenie z Open-Meteo…</p>
+    </section>
+
+    <section class="section wrap" aria-labelledby="hourly-title">
+      <h2 id="hourly-title">Najbliższe godziny</h2>
+      <p class="section-intro">Temperatura i warunki na kolejne godziny w wybranym mieście.</p>
+      <div class="hours" id="hours"></div>
+    </section>
+
+    <section class="section wrap" aria-labelledby="daily-title">
+      <h2 id="daily-title">7 dni w Polsce</h2>
+      <p class="section-intro">Tygodniowy zarys: maksima, minima i dominujący charakter dnia.</p>
+      <div class="days" id="days"></div>
+    </section>
+
+    <footer class="foot wrap">
+      Dane: <a href="https://open-meteo.com/" rel="noopener noreferrer" target="_blank">Open-Meteo</a> (CC BY 4.0). Strefa czasowa: Europe/Warsaw.
+    </footer>
+  </main>
+
+  <script>
+    const CITIES = [
+      { name: "Warszawa", lat: 52.2297, lon: 21.0122 },
+      { name: "Kraków", lat: 50.0647, lon: 19.9450 },
+      { name: "Gdańsk", lat: 54.3520, lon: 18.6466 },
+      { name: "Wrocław", lat: 51.1079, lon: 17.0385 },
+      { name: "Poznań", lat: 52.4064, lon: 16.9252 },
+      { name: "Łódź", lat: 51.7592, lon: 19.4560 },
+      { name: "Szczecin", lat: 53.4285, lon: 14.5528 },
+      { name: "Lublin", lat: 51.2465, lon: 22.5684 },
+      { name: "Katowice", lat: 50.2649, lon: 19.0238 },
+      { name: "Białystok", lat: 53.1325, lon: 23.1688 },
+      { name: "Rzeszów", lat: 50.0412, lon: 21.9991 },
+      { name: "Zakopane", lat: 49.2990, lon: 19.9480 }
+    ];
+
+    const WEATHER_CODES = {
+      0: { label: "Bezchmurnie", condition: "clear" },
+      1: { label: "Przeważnie pogodnie", condition: "clear" },
+      2: { label: "Częściowe zachmurzenie", condition: "cloudy" },
+      3: { label: "Pochmurno", condition: "cloudy" },
+      45: { label: "Mgła", condition: "fog" },
+      48: { label: "Szadź / mgła osadzająca", condition: "fog" },
+      51: { label: "Lekka mżawka", condition: "rain" },
+      53: { label: "Mżawka", condition: "rain" },
+      55: { label: "Gęsta mżawka", condition: "rain" },
+      56: { label: "Marznąca mżawka", condition: "rain" },
+      57: { label: "Silna marznąca mżawka", condition: "rain" },
+      61: { label: "Lekki deszcz", condition: "rain" },
+      63: { label: "Deszcz", condition: "rain" },
+      65: { label: "Ulewny deszcz", condition: "rain" },
+      66: { label: "Marznący deszcz", condition: "rain" },
+      67: { label: "Silny marznący deszcz", condition: "rain" },
+      71: { label: "Lekki śnieg", condition: "snow" },
+      73: { label: "Śnieg", condition: "snow" },
+      75: { label: "Intensywny śnieg", condition: "snow" },
+      77: { label: "Ziarna śniegu", condition: "snow" },
+      80: { label: "Przelotne opady", condition: "rain" },
+      81: { label: "Przelotny deszcz", condition: "rain" },
+      82: { label: "Gwałtowne opady", condition: "rain" },
+      85: { label: "Przelotny śnieg", condition: "snow" },
+      86: { label: "Intensywny przelotny śnieg", condition: "snow" },
+      95: { label: "Burza", condition: "storm" },
+      96: { label: "Burza z gradem", condition: "storm" },
+      99: { label: "Silna burza z gradem", condition: "storm" }
+    };
+
+    const citySelect = document.getElementById("city");
+    const refreshBtn = document.getElementById("refresh");
+    const nowEl = document.getElementById("now");
+    const statusEl = document.getElementById("status");
+    const hoursEl = document.getElementById("hours");
+    const daysEl = document.getElementById("days");
+
+    const savedCity = localStorage.getItem("pogoda-pl-city") || "Warszawa";
+
+    CITIES.forEach((city) => {
+      const option = document.createElement("option");
+      option.value = city.name;
+      option.textContent = city.name;
+      if (city.name === savedCity) option.selected = true;
+      citySelect.appendChild(option);
+    });
+
+    function describe(code) {
+      return WEATHER_CODES[code] || { label: "Warunki nieznane", condition: "cloudy" };
+    }
+
+    function windDir(degrees) {
+      const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+      return dirs[Math.round(degrees / 45) % 8];
+    }
+
+    function formatHour(iso) {
+      return new Intl.DateTimeFormat("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Warsaw"
+      }).format(new Date(iso));
+    }
+
+    function formatDay(iso) {
+      return new Intl.DateTimeFormat("pl-PL", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Warsaw"
+      }).format(new Date(iso + "T12:00:00"));
+    }
+
+    function setStatus(message, { busy = false, error = false } = {}) {
+      statusEl.textContent = message;
+      statusEl.dataset.busy = busy ? "true" : "false";
+      statusEl.classList.toggle("error", error);
+    }
+
+    async function loadWeather(cityName) {
+      const city = CITIES.find((item) => item.name === cityName) || CITIES[0];
+      localStorage.setItem("pogoda-pl-city", city.name);
+      refreshBtn.disabled = true;
+      setStatus("Aktualizacja pogody…", { busy: true });
+
+      const url = new URL("https://api.open-meteo.com/v1/forecast");
+      url.searchParams.set("latitude", city.lat);
+      url.searchParams.set("longitude", city.lon);
+      url.searchParams.set("timezone", "Europe/Warsaw");
+      url.searchParams.set("forecast_days", "7");
+      url.searchParams.set(
+        "current",
+        "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m"
+      );
+      url.searchParams.set("hourly", "temperature_2m,weather_code,precipitation_probability");
+      url.searchParams.set(
+        "daily",
+        "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum"
+      );
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Nie udało się pobrać prognozy.");
+        const data = await response.json();
+        renderWeather(city, data);
+        const updated = new Intl.DateTimeFormat("pl-PL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Europe/Warsaw"
+        }).format(new Date());
+        setStatus(`Zaktualizowano o ${updated}`);
+      } catch (error) {
+        setStatus(error.message || "Błąd sieci. Spróbuj ponownie.", { error: true });
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    function renderWeather(city, data) {
+      const current = data.current;
+      const info = describe(current.weather_code);
+      document.body.dataset.condition = info.condition;
+
+      nowEl.innerHTML = `
+        <p class="now-city">${city.name}</p>
+        <p class="now-temp">${Math.round(current.temperature_2m)}<small>°C</small></p>
+        <p class="now-desc">${info.label}</p>
+        <div class="now-meta">
+          <span>Odczuwalna ${Math.round(current.apparent_temperature)}°</span>
+          <span>Wilgotność ${current.relative_humidity_2m}%</span>
+          <span>Wiatr ${Math.round(current.wind_speed_10m)} km/h ${windDir(current.wind_direction_10m)}</span>
+        </div>
+      `;
+
+      const now = Date.now();
+      const hourlyItems = [];
+      for (let i = 0; i < data.hourly.time.length; i += 1) {
+        const stamp = new Date(data.hourly.time[i]).getTime();
+        if (stamp < now - 30 * 60 * 1000) continue;
+        hourlyItems.push(i);
+        if (hourlyItems.length >= 12) break;
+      }
+
+      hoursEl.innerHTML = hourlyItems
+        .map((i) => {
+          const code = describe(data.hourly.weather_code[i]);
+          const rain = data.hourly.precipitation_probability[i];
+          return `
+            <article class="hour">
+              <time datetime="${data.hourly.time[i]}">${formatHour(data.hourly.time[i])}</time>
+              <strong>${Math.round(data.hourly.temperature_2m[i])}°</strong>
+              <span>${code.label}</span>
+              <span>opady ${rain ?? 0}%</span>
+            </article>
+          `;
+        })
+        .join("");
+
+      daysEl.innerHTML = data.daily.time
+        .map((day, i) => {
+          const code = describe(data.daily.weather_code[i]);
+          return `
+            <article class="day">
+              <time datetime="${day}">${formatDay(day)}</time>
+              <div>
+                <strong style="font-family:var(--font-body);font-size:1rem">${code.label}</strong>
+                <span>opady ${data.daily.precipitation_sum[i]} mm</span>
+              </div>
+              <p class="range">${Math.round(data.daily.temperature_2m_max[i])}°<em>${Math.round(data.daily.temperature_2m_min[i])}°</em></p>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    citySelect.addEventListener("change", () => loadWeather(citySelect.value));
+    refreshBtn.addEventListener("click", () => loadWeather(citySelect.value));
+
+    loadWeather(citySelect.value);
+  </script>
 </body>
 </html>
